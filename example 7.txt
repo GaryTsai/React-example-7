@@ -1,0 +1,222 @@
+import React, {Component} from 'react';
+// import Canvas from './components/cnavas.js';
+
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.constraints = window.constraints = {
+      audio: false,
+      video: {width: {exact: 1920}, height: {exact: 1080}}
+    };
+    this.position={};
+    this.ZoomRatio = 10;
+    this.canvasZoomStyleWidth = 800;
+    this.canvasZoomStyleHeight = 450;
+    this.state = {
+      load: false,
+      error:false,
+      errorMessage:''
+    };
+  }
+
+  //event listen
+  componentDidMount() {
+    this.create();
+    this.canvas.addEventListener('mousewheel', this.mouseWheel)//Other Browser
+    this.canvas.addEventListener('DomMouseScroll', this.mouseWheel)//Chrome
+  }
+  //When rerender the UI, remove the event listen
+  componentWillUnmount() {
+    this.canvas.removeEventListener('mousewheel', this.mouseWheel)//Other Browser
+    this.canvas.removeEventListener('DomMouseScroll', this.mouseWheel)//Chrome
+  }
+  mouseWheel = (e) => {
+    if (!this.state.load)
+      return;
+    const mousewheel = e.wheelDelta ? e.wheelDelta : e.delta ? e.delta : 0;
+    if (mousewheel > 0) {
+      this.handleZoomIn();
+    } else {
+      this.handleZoomOut();
+    }
+  }
+
+  errorCallback=(error)=>{
+    console.log(error,error.name);
+    let errorMsg = 'getUserMedia error:' + error.name;
+    if (error.name === 'ConstraintNotSatisfiedError') {
+      errorMsg='The resolution ' + this.constraints.video.width.exact + 'x' +
+          this.constraints.video.width.exact + ' px is not supported by your device.'
+    } else if (error.name === 'PermissionDeniedError') {
+      errorMsg='Permissions have not been granted to use your camera and ' +
+          'microphone, you need to allow the page access to your devices in ' +
+          'order for the demo to work.';
+    }
+    if(error !=="undefined"){
+      console.log(error);
+
+    }
+    this.setState({
+      error:true,
+      errorMessage:errorMsg,
+    })
+  }
+  videoRelease =()=> {
+    let stream = this.video.srcObject;
+    let tracks = stream.getTracks();
+    for (let i = 0; i < tracks.length; i++) {
+      let track = tracks[i];
+      track.stop();
+    }
+    //display button
+    this.setState({
+      load:stream.active
+    })
+    //stop drawImage
+    cancelAnimationFrame(this.requestID);
+  }
+  create =()=>
+  {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia(this.constraints)
+          .then(this.successCallback)
+          .catch(this.errorCallback);
+    }
+  }
+  successCallback=(stream)=>{
+    const video = document.getElementById('videoElement');
+    let videoTracks = stream.getVideoTracks();
+    console.log('Got stream with constraints:', this.constraints);
+    console.log('Using video device: ' + videoTracks[0].label);
+    stream.onremovetrack = function() {
+      console.log('Stream ended');
+    };
+    window.stream = stream; // make variable available to browser console
+    video.srcObject = stream;
+    this.setState({
+      load:stream.active
+    })
+    if (this.requestID) {
+      cancelAnimationFrame(this.requestID);
+      this.requestID = null;
+    }
+    this.requestID = requestAnimationFrame(this.drawImage);
+  }
+
+  drawImage=()=>{
+    //Ensure the video data is loading
+    if(!this.video.videoWidth){
+      this.requestID = requestAnimationFrame(this.drawImage);
+      return ;
+    }
+    if(this.canvas){
+      //draw video image to canvas
+      this.canvas.width = this.video.videoWidth;
+      this.canvas.height = this.video.videoHeight;
+      this.draw(this.video, this.video.videoWidth, this.video.videoHeight)
+      if (this.requestID) {
+        cancelAnimationFrame(this.requestID);
+        this.requestID = null;
+      }
+      this.requestID = requestAnimationFrame(this.drawImage);
+    }
+
+  }
+  draw =(video, videoWidth, videoHeight)=>{
+    const position = this.getImagePosition(video,videoWidth,videoHeight);
+    console.log(position);
+    console.log(position.zoom_x, position.zoom_x, position.zoom_width, position.zoom_height);
+    this.canvas.getContext('2d').drawImage(video, position.zoom_x, position.zoom_y, position.zoom_width, position.zoom_height);
+  }
+
+  getImagePosition = (video , videoWidth ,videoHeight ) => {
+    //Get canvas image style ratio from getCanvasRatio
+    const canvasScale = this.getCanvasRatio(this.canvas.style.width , this.canvas.style.height);
+    console.log(canvasScale,this.canvas.style.width,this.canvas.style.height);
+
+    //Ratio of upload image
+    const videoScale = videoWidth / videoHeight
+    console.log(videoScale,videoWidth,videoHeight);
+
+    if(videoScale > canvasScale){
+      //Image position
+      this.position.width = videoWidth;
+      this.position.height = Math.round((videoWidth/canvasScale));
+      this.position.x = 0;
+      this.position.y = Math.round((this.position.height - videoHeight)/2) ;
+
+      this.position.zoom_width = Math.round(video.videoWidth * this.ZoomRatio/10);
+      this.position.zoom_height = Math.round(video.videoHeight * this.ZoomRatio)/10;
+      this.position.zoom_x = Math.round((this.position.width - this.position.zoom_width) / 2);
+      this.position.zoom_y = Math.round((this.position.height - this.position.zoom_height) / 2);
+
+    }else{
+      //Image position
+      this.position.width =  Math.round((videoHeight*canvasScale));
+      this.position.height = videoHeight;
+      this.position.x = Math.round((this.position.width - videoWidth)/2) ;
+      this.position.y = 0 ;
+
+      this.position.zoom_width = Math.round(this.position.width * this.ZoomRatio/10);
+      this.position.zoom_height = Math.round(this.position.height * this.ZoomRatio/10);
+      this.position.zoom_x = Math.round((this.position.width  - this.position.zoom_width) / 2);
+      this.position.zoom_y = Math.round((this.position.height - this.position.zoom_height) / 2);
+    }
+    return this.position
+  };
+  getCanvasRatio = (width, height) => {
+    const canvasRatio = width.replace('px', '').valueOf() / height.replace('px', '').valueOf();
+    return canvasRatio
+  }
+  handleZoomIn = () => {
+    if (this.ZoomRatio + 1 > 20)
+      return
+    this.ZoomRatio = (this.ZoomRatio + 1);
+
+  };
+  handleZoomOut = () => {
+    if (this.ZoomRatio - 1 < 0)
+      return
+    this.ZoomRatio = (this.ZoomRatio - 1);
+
+  }
+
+  render() {
+    const container =  {
+      margin: '0px auto',
+      textAlign: 'center'
+    }
+    const videoElement =  {
+      display: 'none',
+      width: '800px',
+      height: '450px',
+    }
+
+    const btn_style100={
+      width: '100px'
+    }
+    const btn_style150={
+      width: '150px'
+    }
+    return (
+        <div style={container}>
+            { this.state.error && <div id="errorMsg">Error Message: {this.state.errorMessage}</div>}
+             <video autoPlay={true}  ref={video => this.video = video} id="videoElement"style={videoElement}/>
+            <div>
+            <canvas  ref={video => this.canvas =video} style={{display: 'block',margin:'auto', width: this.canvasZoomStyleWidth + 'px', height: this.canvasZoomStyleHeight + 'px',transform:'scaleX(-1)'}}/>
+            </div>
+
+            <div>
+              {  !this.state.load && !this.state.error && <button type='button'  style={btn_style150} onClick={event => this.create(event)}>create stream</button>}
+              { this.state.load &&  <button type='button' style={btn_style150} onClick={event => this.videoRelease(event)}>release stream</button>}
+            </div>
+            <div>
+              {  this.state.load &&  <button type='button' style={btn_style100} onClick={event => this.handleZoomIn(event)}>zoom in</button>}
+              {  this.state.load &&   <button type='button' style={btn_style100} onClick={event => this.handleZoomOut(event)}>zoom out</button>}
+            </div>
+        </div>
+    );
+  }
+}
+
+export default App;
