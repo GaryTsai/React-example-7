@@ -4,22 +4,22 @@ import Canvas from './components/canvas.js';
 class App extends Component {
   constructor(props) {
     super(props);
+    //video constraints
     this.constraints = window.constraints = {
       audio: false,
       video: {width: {exact: 1920}, height: {exact: 1080}}
     };
     this.state = {
-      load:false,
-      pause: true,
-      error:false,
+      load:false,//whether video stream is loading?
+      pause: true,//push release button
+      error:false,////whether error occur
       errorMessage:''
     };
   }
-  //event listen
+  //initial video loading
   componentDidMount() {
     this.initVideo();
   }
-  //when rerender the UI, remove the event listen
   componentWillUnmount() {
   }
   //whether device detect the video or audio device
@@ -92,12 +92,13 @@ class App extends Component {
     let stream = this.video.srcObject;
     //return all the media device connect list
     let tracks = stream.getTracks();
+    console.log(tracks);
     for (let i = 0; i < tracks.length; i++) {
       let track = tracks[i];
       //stop use the track
       track.stop();
     }
-    //display button
+    //display create button
     this.setState({
       pause:!stream.active
     })
@@ -136,18 +137,19 @@ class App extends Component {
     }
     return (
         <div style={container}>
-            { this.state.error && <div id="errorMsg">Error Message: {this.state.errorMessage}</div>}
-             <video autoPlay={true}  ref={video => this.video = video} id="videoElement"style={videoElement}/>
-
-            <Canvas showCanvas={!this.state.error} ref={canvas => this.canvas =canvas}  video={this.video}/>
+            { this.state.error && <div id="errorMsg">Error Message: {this.state.errorMessage}</div> }
+              <video autoPlay={true}  ref={video => this.video = video} id="videoElement"style={videoElement}/>
+              <Canvas  ref={canvas => this.canvas =canvas}  video={this.video}/>
           <div>
-            {  this.state.load&& this.state.pause  && !this.state.error && <button type='button'  style={btn_style150} onClick={event => this.initVideo(event)}>create stream</button>}
-            { !this.state.pause &&  <button type='button' style={btn_style150} onClick={event => this.videoRelease(event)}>release stream</button>}
+            {/*load == false、pause ==true*/}
+            {  this.state.load && this.state.pause  && <button type='button'  style={btn_style150} onClick={event => this.initVideo(event)}>create stream</button>}
+            {/*pause == false、load ==true*/}
+            { this.state.load && !this.state.pause  && <button type='button' style={btn_style150} onClick={event => this.videoRelease(event)}>release stream</button>}
           </div>
           <div>
-              {  !this.state.pause &&  <button type='button' style={btn_style100} onClick={event => this.handleZoomIn(event)}>zoom in</button>}
-              {  !this.state.pause &&   <button type='button' style={btn_style100} onClick={event => this.handleZoomOut(event)}>zoom out</button>}
-            </div>
+              {  this.state.load && !this.state.pause  &&   <button type='button' style={btn_style100} onClick={event => this.handleZoomIn(event)}>zoom in</button>}
+              {  this.state.load && !this.state.pause  &&    <button type='button' style={btn_style100} onClick={event => this.handleZoomOut(event)}>zoom out</button>}
+          </div>
         </div>
     );
   }

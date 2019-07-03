@@ -10,16 +10,21 @@ class Canvas extends Component {
     }
     //event listen
     componentDidMount() {
-        this.canvas.addEventListener('wheel', this.mouseWheel)
+        this.canvas.addEventListener('mousewheel', this.mouseWheel);//
+        this.canvas.addEventListener('DOMMouseScroll', this.mouseWheel);//Firefox
     }
     //When rerender the UI, remove the event listen
     componentWillUnmount() {
-        this.canvas.removeEventListener('wheel', this.mouseWheel)
+        // this.canvas.removeEventListener('wheel', this.mouseWheel)
+        this.canvas.removeEventListener('wheel', this.mouseWheel);//
+        this.canvas.removeEventListener('DOMMouseScroll', this.mouseWheel);//Firefox
     }
+
     mouseWheel = (e) => {
         if (!this.canvas)
             return;
-        const mousewheel = e.wheelDelta ? e.wheelDelta : e.delta ? e.delta : 0;
+        const mousewheel = e.wheelDelta ? e.wheelDelta : e.detail ? -e.detail : 0;
+        console.log(mousewheel);
         if (mousewheel > 0) {
             this.handleZoomIn();
         } else {
@@ -30,14 +35,13 @@ class Canvas extends Component {
         if (this.ZoomRatio + 1 > 20)
             return
         this.ZoomRatio = (this.ZoomRatio + 1);
-
     };
     handleZoomOut = () => {
         if (this.ZoomRatio - 1 < 0)
             return
         this.ZoomRatio = (this.ZoomRatio - 1);
-
     }
+
     draw =(video, videoWidth, videoHeight)=>{
         const position = this.getImagePosition(video,videoWidth,videoHeight);
         this.canvas.width = position.width;
@@ -46,7 +50,7 @@ class Canvas extends Component {
     }
 
     getImagePosition = (video , videoWidth ,videoHeight ) => {
-        //Get canvas image style ratio from getCanvasRatio
+        //Get canvas image ratio from getCanvasRatio
         const canvasScale = this.canvasWidth/this.canvasHeight;
 
         //Ratio of upload image
@@ -79,7 +83,6 @@ class Canvas extends Component {
 
         return this.position
     };
-
 
     render() {
         return (
