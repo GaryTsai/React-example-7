@@ -44,8 +44,15 @@ class Canvas extends Component {
 
     draw =(video, videoWidth, videoHeight)=>{
         const position = this.getImagePosition(video,videoWidth,videoHeight);
+        console.log('47 video Width&Height',videoWidth,videoHeight);
+        console.log('48 position Width&Height',position.width,position.height);
+        console.log('49 position Width&Height',position.zoom_width,position.zoom_height);
         this.canvas.width = position.width;
         this.canvas.height = position.height;
+        console.log('50 canvas Width&Height',this.canvas.width,this.canvas.height);
+        console.log('51 video ',video);
+
+
         this.canvas.getContext('2d').drawImage(video, position.zoom_x, position.zoom_y, position.zoom_width, position.zoom_height);
     }
 
@@ -85,9 +92,11 @@ class Canvas extends Component {
     };
 
     render() {
+        const canvasStyle={display: 'block',margin:'auto',width:'800px',height:'100%',transform:'ScaleX(-1)'}
+
         return (
             <div>
-                <canvas  ref={video => this.canvas =video} style={{display: 'block',margin:'auto', width: '800px', height: '100%',transform:'scaleX(-1)'}}/>
+                <canvas  ref={video => this.canvas =video} style={canvasStyle}/>
             </div>
         );
     }

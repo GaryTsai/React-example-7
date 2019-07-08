@@ -15,9 +15,15 @@ class App extends Component {
       error:false,////whether error occur
       errorMessage:''
     };
+      (function() {
+          var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+      })();
   }
+
   //initial video loading
   componentDidMount() {
+
     this.initVideo();
   }
   componentWillUnmount() {
@@ -33,6 +39,7 @@ class App extends Component {
   }
   //if detect device, get stream data and call requestAnimationFrame to draw video image
   successCallback=(stream)=>{
+
     const video = document.getElementById('videoElement');
     //get video list
     let videoTracks = stream.getVideoTracks();
@@ -51,11 +58,10 @@ class App extends Component {
       load:true,
       pause:!stream.active
     })
-    // avoid generate black image
-    if (this.requestID) {
-      cancelAnimationFrame(this.requestID);
-      this.requestID = null;
-    }
+    // if (this.requestID) {
+    //   cancelAnimationFrame(this.requestID);
+    //   this.requestID = null;
+    // }
     //start video animation
     this.requestID = requestAnimationFrame(this.drawImage)|| window.webkitRequestAnimationFrame(this.drawImage);
   }
@@ -104,9 +110,11 @@ class App extends Component {
     })
     //stop drawImage
     if (this.requestID) {
-      cancelAnimationFrame(this.requestID);
-      this.requestID = null;
+    console.log('Release  stop drawImage~~~~~~~~~~~~~~ ',this.requestID);
+    cancelAnimationFrame(this.requestID);
+    this.requestID = null;
     }
+
   }
   handleZoomIn = () => {
     if (this.canvas)
