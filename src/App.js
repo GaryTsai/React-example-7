@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import Canvas from './components/canvas.js';
-
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+    window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 class App extends Component {
   constructor(props) {
     super(props);
@@ -15,10 +16,7 @@ class App extends Component {
       error:false,////whether error occur
       errorMessage:''
     };
-      (function() {
-          var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-              window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-      })();
+
   }
 
   //initial video loading
